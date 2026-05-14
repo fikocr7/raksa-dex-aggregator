@@ -9,7 +9,7 @@ export function Hero() {
         </div>
         <div className="flex items-center gap-3">
           <a
-            href="https://github.com/fikocr7/kiro"
+            href="https://github.com/fikocr7/raksa-dex-aggregator"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-text-muted hover:text-text transition"

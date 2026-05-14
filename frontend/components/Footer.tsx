@@ -8,7 +8,7 @@ export function Footer() {
         </div>
         <div className="flex items-center gap-4">
           <a
-            href="https://github.com/fikocr7/kiro"
+            href="https://github.com/fikocr7/raksa-dex-aggregator"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-text transition"
@@ -16,7 +16,7 @@ export function Footer() {
             GitHub
           </a>
           <a
-            href="https://github.com/fikocr7/kiro/blob/main/LICENSE"
+            href="https://github.com/fikocr7/raksa-dex-aggregator/blob/main/LICENSE"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-text transition"

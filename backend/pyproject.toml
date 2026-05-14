@@ -44,9 +44,9 @@ dev = [
 raksa = "app.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/fikocr7/kiro"
-Repository = "https://github.com/fikocr7/kiro"
-Issues = "https://github.com/fikocr7/kiro/issues"
+Homepage = "https://github.com/fikocr7/raksa-dex-aggregator"
+Repository = "https://github.com/fikocr7/raksa-dex-aggregator"
+Issues = "https://github.com/fikocr7/raksa-dex-aggregator/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
