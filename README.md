@@ -1,175 +1,176 @@
 # 🔥 Raksa DEX Aggregator
 
 [![CI](https://github.com/fikocr7/kiro/actions/workflows/ci.yml/badge.svg)](https://github.com/fikocr7/kiro/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Next.js 14](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
 
-**Find the best swap rate across every major DEX aggregator — in one place.**
-
-Raksa queries 1inch, Paraswap, 0x, OpenOcean, and KyberSwap in parallel, compares the output, and tells you who's giving you the best deal. Ships as a **FastAPI backend** + **Next.js web UI** + **CLI** so you can use it however you want.
+> **The best swap rate. Every time.** Multi-DEX aggregator that queries 1inch, Paraswap, 0x, OpenOcean, KyberSwap, OKX, and Jupiter (Solana) in parallel and surfaces the winner — with one-click execution via WalletConnect.
 
 ---
 
-## 🇺🇸 English
+## ✨ Features
 
-### Features
+- **7 aggregators in parallel** — 1inch, Paraswap, 0x, OpenOcean, KyberSwap, OKX (EVM), Jupiter (Solana)
+- **6 EVM chains + Solana** — Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Solana
+- **CLI + Web UI** — pick whichever vibe matches your workflow
+- **WalletConnect / RainbowKit** — connect MetaMask, Rabby, WalletConnect-compatible wallet, sign + execute swaps from the UI
+- **ERC20 approve + swap flow** — automated approval check, slippage-protected `minAmountOut`
+- **No tracking, no analytics** — runs locally, your wallet your keys
+- **Async-first backend** — every aggregator queried concurrently via `httpx.AsyncClient`
+- **Type-safe end to end** — Pydantic on the backend, TypeScript on the frontend
 
-- 🔎 **Multi-source quotes** — parallel fetch from 1inch, Paraswap, 0x, OpenOcean, KyberSwap
-- ⚡ **Fast** — ~1-2s full comparison thanks to async httpx
-- 🌐 **6 chains** — Ethereum, Arbitrum, Optimism, Base, Polygon, BSC
-- 💻 **Three surfaces** — REST API, Web UI, CLI
-- 📊 **Breakdown per aggregator** — price impact, gas estimate, estimated output
-- 🎯 **Best route highlighted** — winner based on actual amount out (after gas)
-- 🌙 **Dark-mode native** — because we're not monsters
+---
 
-### Quick Start
+## 🚀 Quick Start
 
-#### Backend (Python 3.11+)
+### CLI
 
 ```bash
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
-uvicorn app.main:app --reload --port 8787
-```
 
-#### Frontend (Node 20+)
-
-```bash
-cd frontend
-npm install
-npm run dev
-# → http://localhost:3000
-```
-
-#### CLI
-
-```bash
-cd backend
 raksa quote --from USDC --to ETH --amount 100 --chain arbitrum
 ```
 
-### API Example
+### Web UI
 
 ```bash
-curl "http://localhost:8787/api/quote?chain=arbitrum&sell=USDC&buy=ETH&amount=100"
+# Terminal 1 — backend
+cd backend && source .venv/bin/activate
+uvicorn app.main:app --reload --port 8787
+
+# Terminal 2 — frontend
+cd frontend
+npm install
+npm run dev   # opens http://localhost:3000
+```
+
+---
+
+## 🔑 API Keys (optional)
+
+The free aggregators (Paraswap, OpenOcean, KyberSwap, Jupiter) work out of the box.
+
+To enable the others, set environment variables:
+
+```bash
+export ONEINCH_API_KEY="<key>"        # https://portal.1inch.dev
+export ZEROX_API_KEY="<key>"          # https://0x.org
+export OKX_API_KEY="<key>"            # https://www.okx.com/web3/build/dev-portal
+export OKX_API_SECRET="<secret>"
+export OKX_API_PASSPHRASE="<phrase>"
+```
+
+For WalletConnect Project ID (frontend):
+
+```bash
+# In frontend/.env.local
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID="your_walletconnect_project_id"
+```
+
+Get one for free at https://cloud.walletconnect.com.
+
+---
+
+## 📋 Live API Sample
+
+```bash
+$ curl "http://localhost:8787/api/quote?chain=arbitrum&sell=USDC&buy=ETH&amount=100"
 ```
 
 ```json
 {
   "chain": "arbitrum",
-  "sell": {"symbol": "USDC", "amount": "100"},
-  "buy": {"symbol": "ETH"},
+  "best_source": "kyberswap",
+  "elapsed_ms": 1188,
   "quotes": [
-    {"source": "1inch",     "amount_out": "0.038210", "gas": 210000, "winner": true},
-    {"source": "paraswap",  "amount_out": "0.038187", "gas": 225000},
-    {"source": "0x",        "amount_out": "0.038175", "gas": 218000},
-    {"source": "openocean", "amount_out": "0.038142", "gas": 240000},
-    {"source": "kyberswap", "amount_out": "0.038098", "gas": 235000}
-  ],
-  "elapsed_ms": 842
+    {"source": "kyberswap", "amount_out": "0.044417354026048374", "winner": true},
+    {"source": "paraswap",  "amount_out": "0.044342303367261292", "winner": false},
+    {"source": "openocean", "amount_out": "0.044331495626232815", "winner": false}
+  ]
 }
 ```
 
-### Architecture
+Full reference: [docs/API.md](docs/API.md)
+
+---
+
+## 🏗️ Architecture
 
 ```
-┌─────────────────┐     ┌────────────────────┐
-│  Next.js 14 UI  │────▶│  FastAPI backend   │
-│  (wagmi/viem)   │     │  (async httpx)     │
-└─────────────────┘     └─────────┬──────────┘
-                                  │
-         ┌────────┬────────┬──────┼──────┬──────────┐
-         ▼        ▼        ▼      ▼      ▼          ▼
-      1inch   Paraswap    0x  OpenOcean KyberSwap
+┌─────────────────┐     ┌─────────────────┐
+│  Next.js Web UI │────▶│  Python FastAPI │
+│ (wagmi + viem)  │     │   (aggregator)  │
+└─────────────────┘     └──────┬──────────┘
+                               │ asyncio.gather
+       ┌──────┬──────┬─────────┼─────────┬──────┬──────┐
+       ▼      ▼      ▼         ▼         ▼      ▼      ▼
+    1inch  Paraswap  0x   OpenOcean  KyberSwap OKX   Jupiter
+                                                     (Solana)
 ```
 
-Each aggregator adapter lives in `backend/app/aggregators/` and implements a common interface (`get_quote(sell, buy, amount, chain) -> Quote`). Easy to add more.
-
-### Extending
-
-Drop a new file in `backend/app/aggregators/`:
-
-```python
-from .base import Aggregator, Quote
-
-class Matcha(Aggregator):
-    name = "matcha"
-    async def get_quote(self, ctx): ...
-```
-
-Register it in `backend/app/aggregators/__init__.py` and it'll light up in the UI automatically.
-
-### Deploying
-
-- **Backend** → Railway / Fly.io / Render free tier — `Dockerfile` in `backend/`
-- **Frontend** → Vercel — one-click from GitHub
-- Set `NEXT_PUBLIC_API_URL` in frontend env to your backend URL
+Each aggregator is an `Aggregator` subclass with `get_quote(ctx) -> Quote`. Adding a new one is two files: the adapter + a registry line. See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ---
 
 ## 🇮🇩 Bahasa Indonesia
 
-### Apa itu Raksa?
+**Raksa** adalah DEX aggregator open-source yang membandingkan harga swap dari 7 aggregator (1inch, Paraswap, 0x, OpenOcean, KyberSwap, OKX, Jupiter) di 6 EVM chain + Solana, secara paralel. Dapet harga terbaik tanpa harus buka satu-satu.
 
-Raksa itu DEX aggregator yang nge-cek harga swap di 5 aggregator sekaligus (1inch, Paraswap, 0x, OpenOcean, KyberSwap) terus kasih tau lu mana yg terbaik. Bisa dipake dari web, CLI, atau pake API langsung.
-
-### Fitur
-
-- 🔎 Quote dari 5 source sekaligus, paralel
-- ⚡ ~1-2 detik full comparison
-- 🌐 6 chain: ETH, Arbitrum, Optimism, Base, Polygon, BSC
-- 💻 3 cara pake: REST API, Web UI, CLI
-- 📊 Breakdown per aggregator: amount out, gas, price impact
-- 🎯 Winner auto-highlight
-- 🌙 Dark mode default
-
-### Cepat Mulai
-
-#### Backend
+### Instalasi cepat
 
 ```bash
-cd backend
-python3 -m venv .venv && source .venv/bin/activate
+# Backend (CLI)
+cd backend && python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
-uvicorn app.main:app --reload --port 8787
-```
-
-#### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Buka `http://localhost:3000`.
-
-#### CLI
-
-```bash
 raksa quote --from USDC --to ETH --amount 100 --chain arbitrum
+
+# Frontend (Web UI)
+cd frontend && npm install && npm run dev
 ```
 
-### Kenapa Bikin Ini?
+### Fitur utama
 
-Setiap aggregator ngaku "best rates". Kenyataannya? Beda route = beda hasil, kadang beda $5-50 per swap besar. Raksa bandingin semua sekaligus biar lu gak ketipu marketing masing-masing aggregator.
+- 7 aggregator paralel (3-7 detik response)
+- Connect wallet (MetaMask / Rabby / WalletConnect) langsung di UI
+- Auto approve + swap flow dengan slippage protection
+- Dukungan native ETH / BNB / MATIC + ERC20 + token Solana
+- API publik gratis tanpa registrasi (untuk Paraswap, OpenOcean, KyberSwap, Jupiter)
 
-### Dokumentasi Lengkap
+### Kontribusi
 
-Lihat [`docs/`](./docs/) untuk API reference, arsitektur, dan cara nambahin aggregator baru.
+Semua aggregator pakai pola yang sama — tinggal subclass `Aggregator`, implementasi `get_quote()`, daftarin di registry. Detail di [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ---
 
-## License
+## 🗺️ Roadmap
 
-MIT © 2026
+- [x] CLI + REST API
+- [x] Web UI dark-mode
+- [x] 5 EVM aggregators
+- [x] OKX aggregator
+- [x] Jupiter (Solana) integration
+- [x] WalletConnect + execute swap
+- [ ] Solana wallet adapter (Phantom)
+- [ ] Cross-chain bridge quotes (LiFi / Squid)
+- [ ] Limit orders
+- [ ] Historical price chart
+- [ ] Self-hosted Docker compose
 
-## Contributing
+---
 
-PRs welcome. See [CONTRIBUTING.md](./docs/CONTRIBUTING.md).
+## 🤝 Contributing
 
-## Disclaimer
+PRs welcome. See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for development setup, code style, and how to add a new aggregator.
 
-This tool returns public quote data from third-party aggregator APIs. It does NOT execute swaps automatically — swap execution requires connecting your wallet via the web UI. Use at your own risk. Always verify output amounts before confirming transactions.
+## 📜 License
+
+[MIT](LICENSE) — do whatever you want, just don't blame us.
+
+---
+
+## ⚠ Disclaimer
+
+Raksa is **not** a custodian. It does not hold funds, store private keys, or have access to your wallet. All swap calldata is built directly from public DEX aggregator APIs and signed locally by your wallet. Always verify the destination address, sell amount, and minimum receive in your wallet's confirmation prompt before signing. Crypto involves risk — slippage, MEV, sandwich attacks, and smart-contract bugs are real. Use small amounts to test first.

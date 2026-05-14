@@ -42,7 +42,11 @@ async def compare_quotes(
     ``amount`` is human-readable (e.g. ``"100"`` for 100 USDC).
     """
     chain = chain.lower()
-    cid = chain_id(chain)
+    # Solana = non-EVM, no chain_id; EVM chains get a real ID
+    if chain == "solana":
+        cid = 0
+    else:
+        cid = chain_id(chain)
 
     sell_addr, sell_dec = resolve_token(chain, sell_symbol)
     buy_addr, buy_dec = resolve_token(chain, buy_symbol)

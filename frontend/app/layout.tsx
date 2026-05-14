@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Web3Provider } from "@/components/Web3Provider";
 
 export const metadata: Metadata = {
   title: "Raksa · DEX Aggregator",
@@ -32,7 +33,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="antialiased">
-        <div className="min-h-screen flex flex-col">{children}</div>
+        <Web3Provider>
+          <div className="min-h-screen flex flex-col">{children}</div>
+        </Web3Provider>
       </body>
     </html>
   );

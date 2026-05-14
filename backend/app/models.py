@@ -28,7 +28,7 @@ class BuyLeg(BaseModel):
 
 
 class Quote(BaseModel):
-    source: str  # "1inch" | "paraswap" | "0x" | "openocean" | "kyberswap"
+    source: str  # "1inch" | "paraswap" | "0x" | "openocean" | "kyberswap" | "okx" | "jupiter"
     amount_out: str  # human-readable, e.g. "0.038210"
     amount_out_raw: str  # wei
     gas: int | None = None
@@ -37,6 +37,23 @@ class Quote(BaseModel):
     route_summary: str | None = None
     raw: dict[str, Any] | None = None  # original API response, for debug
     winner: bool = False  # set by comparison layer
+
+
+class SwapTx(BaseModel):
+    """EVM swap transaction calldata returned by /api/swap."""
+    source: str
+    chain: str
+    to: str  # router/aggregator contract address
+    data: str  # 0x-prefixed hex calldata
+    value: str  # native token amount in wei (decimal string)
+    gas: int | None = None
+    gas_price_gwei: float | None = None
+    allowance_target: str  # ERC20 spender address (router)
+    sell_token: str
+    buy_token: str
+    amount_in_raw: str
+    amount_out_raw: str
+    min_amount_out_raw: str
 
 
 class QuoteError(BaseModel):

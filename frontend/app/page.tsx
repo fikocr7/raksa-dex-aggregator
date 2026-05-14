@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchChains, fetchTokens, fetchQuote, type QuoteResponse, type ChainsResponse, type TokensResponse } from "@/lib/api";
+import { fetchChains, fetchTokens, fetchQuote, type Quote, type QuoteResponse, type ChainsResponse, type TokensResponse } from "@/lib/api";
 import { SwapForm } from "@/components/SwapForm";
 import { QuoteTable } from "@/components/QuoteTable";
 import { Hero } from "@/components/Hero";
 import { Footer } from "@/components/Footer";
+import { ExecuteSwap } from "@/components/ExecuteSwap";
 
 export default function HomePage() {
   const [chains, setChains] = useState<ChainsResponse>({});
@@ -14,22 +15,34 @@ export default function HomePage() {
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+  const [slippagePct, setSlippagePct] = useState(1.0);
 
-  // Load chain list once
   useEffect(() => {
     fetchChains().then(setChains).catch((e) => setError(e.message));
   }, []);
 
-  // Load tokens whenever chain changes
   useEffect(() => {
     if (!chain) return;
     fetchTokens(chain).then(setTokens).catch((e) => setError(e.message));
   }, [chain]);
 
+  // Default selected quote = winner whenever a new quote arrives
+  useEffect(() => {
+    if (quote && quote.quotes.length > 0) {
+      const winner = quote.quotes.find((q) => q.winner) ?? quote.quotes[0];
+      setSelectedQuote(winner);
+    } else {
+      setSelectedQuote(null);
+    }
+  }, [quote]);
+
   async function handleQuote(params: { sell: string; buy: string; amount: string; slippage_pct: number }) {
     setLoading(true);
     setError(null);
     setQuote(null);
+    setSelectedQuote(null);
+    setSlippagePct(params.slippage_pct);
     try {
       const result = await fetchQuote({ chain, ...params });
       setQuote(result);
@@ -55,7 +68,7 @@ export default function HomePage() {
               loading={loading}
             />
           </div>
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-4">
             {error && (
               <div className="card border-danger/50 bg-danger/5">
                 <div className="flex items-start gap-3">
@@ -75,7 +88,18 @@ export default function HomePage() {
                 </div>
               </div>
             )}
-            {quote && !loading && <QuoteTable quote={quote} />}
+            {quote && !loading && (
+              <>
+                <QuoteTable
+                  quote={quote}
+                  selectedSource={selectedQuote?.source}
+                  onSelect={(q) => setSelectedQuote(q)}
+                />
+                {selectedQuote && (
+                  <ExecuteSwap quote={quote} selected={selectedQuote} slippagePct={slippagePct} />
+                )}
+              </>
+            )}
             {!quote && !loading && !error && (
               <div className="card border-dashed text-center py-16">
                 <div className="text-5xl mb-3">💹</div>

@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Final
 
 # Chain ID → canonical slug
+# Solana uses sentinel 0 (no EVM chain ID); Jupiter resolves chain implicitly.
 CHAIN_IDS: Final[dict[str, int]] = {
     "ethereum": 1,
     "arbitrum": 42161,
@@ -11,9 +12,10 @@ CHAIN_IDS: Final[dict[str, int]] = {
     "base": 8453,
     "polygon": 137,
     "bsc": 56,
+    "solana": 0,
 }
 
-CHAIN_NAMES: Final[dict[int, str]] = {v: k for k, v in CHAIN_IDS.items()}
+CHAIN_NAMES: Final[dict[int, str]] = {v: k for k, v in CHAIN_IDS.items() if v}
 
 # Public RPC URLs (unauthenticated, low rate limit — user can override via env)
 DEFAULT_RPCS: Final[dict[str, str]] = {
@@ -23,6 +25,7 @@ DEFAULT_RPCS: Final[dict[str, str]] = {
     "base":     "https://base.drpc.org",
     "polygon":  "https://polygon.drpc.org",
     "bsc":      "https://bsc.drpc.org",
+    "solana":   "https://api.mainnet-beta.solana.com",
 }
 
 # Native token sentinel (used by 1inch/0x/paraswap for ETH/BNB/MATIC)
@@ -82,6 +85,17 @@ TOKENS: Final[dict[str, dict[str, tuple[str, int]]]] = {
         "BUSD":  ("0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56", 18),
         "WETH":  ("0x2170Ed0880ac9A755fd29B2688956BD959F933F8", 18),
     },
+    # Solana — mint addresses (base58, not 0x-hex)
+    "solana": {
+        "SOL":   ("So11111111111111111111111111111111111111112", 9),     # wrapped SOL
+        "USDC":  ("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 6),
+        "USDT":  ("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", 6),
+        "JUP":   ("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", 6),
+        "BONK":  ("DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", 5),
+        "WIF":   ("EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm", 6),
+        "RAY":   ("4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R", 6),
+        "JTO":   ("jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL", 9),
+    },
 }
 
 
@@ -96,8 +110,12 @@ def resolve_token(chain: str, symbol: str) -> tuple[str, int]:
     for sym, data in tokens.items():
         if sym.upper() == symbol_upper:
             return data
-    # maybe user passed a raw address
-    if symbol.startswith("0x") and len(symbol) == 42:
+    # maybe user passed a raw address — EVM hex or Solana base58
+    if chain == "solana":
+        # Solana mint addresses: base58, typically 32-44 chars
+        if 32 <= len(symbol) <= 44 and symbol.isalnum():
+            return symbol, 9  # default decimals, caller should pass real decimals
+    elif symbol.startswith("0x") and len(symbol) == 42:
         return symbol, 18  # default decimals, caller can override
     raise ValueError(f"Unknown token {symbol!r} on {chain!r}. Known: {list(tokens)}")
 
@@ -106,4 +124,8 @@ def chain_id(chain: str) -> int:
     chain = chain.lower()
     if chain not in CHAIN_IDS:
         raise ValueError(f"Unknown chain: {chain!r}. Supported: {list(CHAIN_IDS)}")
-    return CHAIN_IDS[chain]
+    cid = CHAIN_IDS[chain]
+    if cid == 0:
+        # Solana / non-EVM — caller should not need an EVM chain ID
+        raise ValueError(f"{chain!r} is non-EVM; no chain_id available")
+    return cid

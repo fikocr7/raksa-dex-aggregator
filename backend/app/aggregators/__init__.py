@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from .base import Aggregator, QuoteContext
+from .jupiter import Jupiter
 from .kyberswap import KyberSwap
 from .oneinch import OneInch
+from .okx import OKX
 from .openocean import OpenOcean
 from .paraswap import Paraswap
 from .zerox import ZeroX
@@ -17,6 +19,8 @@ def get_all_aggregators() -> list[Aggregator]:
         ZeroX(),
         OpenOcean(),
         KyberSwap(),
+        OKX(),
+        Jupiter(),
     ]
 
 
@@ -28,5 +32,7 @@ __all__ = [
     "ZeroX",
     "OpenOcean",
     "KyberSwap",
+    "OKX",
+    "Jupiter",
     "get_all_aggregators",
 ]

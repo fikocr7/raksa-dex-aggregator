@@ -1,8 +1,17 @@
-import type { QuoteResponse } from "@/lib/api";
+"use client";
+
+import type { Quote, QuoteResponse } from "@/lib/api";
 import { cn, formatNumber, formatGas, percentDiff } from "@/lib/utils";
 
-export function QuoteTable({ quote }: { quote: QuoteResponse }) {
+type Props = {
+  quote: QuoteResponse;
+  selectedSource?: string;
+  onSelect?: (q: Quote) => void;
+};
+
+export function QuoteTable({ quote, selectedSource, onSelect }: Props) {
   const winnerAmount = quote.quotes[0]?.amount_out || "0";
+  const isClickable = !!onSelect;
 
   return (
     <div className="card animate-slide-up space-y-5">
@@ -29,13 +38,21 @@ export function QuoteTable({ quote }: { quote: QuoteResponse }) {
         <div className="text-center py-8 text-text-muted">No quotes returned.</div>
       ) : (
         <div className="space-y-2">
-          {quote.quotes.map((q) => (
+          {quote.quotes.map((q) => {
+            const isSelected = q.source === selectedSource;
+            return (
             <div
               key={q.source}
+              onClick={isClickable ? () => onSelect?.(q) : undefined}
+              role={isClickable ? "button" : undefined}
+              tabIndex={isClickable ? 0 : undefined}
               className={cn(
                 "rounded-lg border p-4 transition",
-                q.winner
-                  ? "border-accent/60 bg-accent/5"
+                isClickable && "cursor-pointer hover:border-accent/50",
+                isSelected
+                  ? "border-accent bg-accent/10 ring-1 ring-accent/40"
+                  : q.winner
+                  ? "border-accent/40 bg-accent/5"
                   : "border-border bg-bg-elevated hover:border-border-strong"
               )}
             >
@@ -101,7 +118,8 @@ export function QuoteTable({ quote }: { quote: QuoteResponse }) {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
