@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "raksa"
 version = "0.1.0"
 description = "Multi-DEX price aggregator - find the best swap rate across 1inch, Paraswap, 0x, OpenOcean, KyberSwap"
-readme = "../README.md"
+readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "fikocr7" }]

@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: raksa-backend
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
